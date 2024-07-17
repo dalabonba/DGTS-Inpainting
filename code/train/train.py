@@ -1,13 +1,13 @@
 """ Trainer for meta-train phase. """
-import json
+# import json
 import os
 import os.path as osp
 import torch.nn.functional as F
-import numpy as np
+# import numpy as np
 import torch
 import torch.nn as nn
-import torchvision.transforms as T
-from torch import optim
+# import torchvision.transforms as T
+# from torch import optim
 from torch.utils.data import DataLoader
 from torchvision.utils import make_grid
 from torchvision import transforms
@@ -17,22 +17,23 @@ from PIL import Image
 from dataset_loader import DatasetLoader as Dataset
 from transformer_64 import Generator
 from loss import PerceptualLoss, StyleLoss
-from itertools import cycle
+# from itertools import cycle
 import random
 class Trainer(object):
     """The class that contains the code for the meta-train phase and meta-eval phase."""
     def __init__(self, args):
         # Set the folder to save the records and checkpoints
-        log_base_dir = '/DGTS/logs/' ############ set train save path
+        log_base_dir = 'logs/trainedChpt' ############ set train save path 設定儲存路徑
         meta_base_dir = osp.join(log_base_dir, args.file_name)
+        print("輸出儲存路徑:",meta_base_dir)
         self.save_path = meta_base_dir
         if os.path.exists(self.save_path):
             pass
         else:
             os.makedirs(self.save_path)
-        self.args = args
+        self.args = args #要傳值給self才能在__init__外的地方用arg的值
         ### data
-        self.trainset = Dataset('train', self.args)
+        self.trainset = Dataset('train', self.args) #建立dataset_loader.py的DatasetLoader(import時as Dataset了)類別實體
         self.train_loader = None
         ####### model #######
         self.netG = Generator().to(self.args.device)
@@ -75,9 +76,9 @@ class Trainer(object):
                 real = data_in.to(self.args.device)
                 B,C,H,W = real.size()
 
-                #irrgular mask
+                #irrgular mask 不規則遮罩
                 tmp = random.sample(range(0,12000),1)
-                THE_PATH = osp.join('/DGTS/data/mask','%05d.png'%tmp[0])
+                THE_PATH = osp.join('data/mask','%05d.png'%tmp[0])
                 mask_in = self.transform(Image.open(THE_PATH).convert('1')).to(self.args.device)
                 mask = mask_in.resize(1,1,H,W)
                 mask = torch.repeat_interleave(1-mask, repeats=B, dim=0)

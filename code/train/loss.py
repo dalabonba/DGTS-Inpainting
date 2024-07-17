@@ -70,7 +70,7 @@ class VGG19(torch.nn.Module):
     def __init__(self):
         super(VGG19, self).__init__()
         features1 = models.vgg19(pretrained=False)
-        features1.load_state_dict(torch.load("/DGTS/vgg19-dcbb9e9d.pth"))
+        features1.load_state_dict(torch.load("data/vgg19-dcbb9e9d.pth"))
         features = features1.features
         self.relu1_1 = torch.nn.Sequential()
         self.relu1_2 = torch.nn.Sequential()
