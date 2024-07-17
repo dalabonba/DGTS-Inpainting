@@ -25,8 +25,8 @@ class DatasetLoader(Dataset):
             for name in files:
                 data.append(osp.join(root, name))
                 
-        self.data = data    
-        print(len(self.data))
+        self.data = data
+        print(f"輸入資料集共有{len(self.data)}個檔案：",data)
         self.image_size = args.image_size
 
         self.transform = transforms.Compose([

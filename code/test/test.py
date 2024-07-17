@@ -28,6 +28,8 @@ import random
 from torchvision import transforms
 from models.networks.generator import UpsamplerGenerator
 
+from torchvision.transforms import ToPILImage
+from util.getFolderFilesPath import get_all_filenames as gafn
 
 class Options():
         netG = 'Upsampler'
@@ -63,11 +65,13 @@ def postprocess(x):
     x = (x + 1.) / 2.
     x.clamp_(0, 1)
     return x
+
 class Trainer(object):
-    def __init__(self, args):
+    def __init__(self, args, folder_number):
         # Set the folder to save the records and checkpoints
-        log_base_dir = '/DGTS/logs' ############ set test save path
-        meta_base_dir = osp.join(log_base_dir, args.file_name)
+
+        log_base_dir = 'logs/'
+        meta_base_dir = osp.join(log_base_dir, f"{args.file_name}{folder_number:02d}")
         self.save_path = meta_base_dir
         if os.path.exists(self.save_path):
             pass
@@ -94,24 +98,32 @@ class Trainer(object):
         self.up = UpsamplerGenerator(opt)
 
     def train(self):
+        start_time = time.time()
         # Set the meta-train log
-        upsample_path ="/DGTS/test/models/places.pth"# The path of Upsampler pretrained network
+        upsample_path ="Places2/latest_net_G.pth"# The path of Upsampler pretrained network
         print(upsample_path)
         self.up.load_state_dict(torch.load(upsample_path))
         self.up = self.up.cuda()
         self.up.eval()
         
-        dgts_path = '/DGTS/logs/save/places.pth'#The path of our pretrained network
+        dgts_path = 'logs/pretrainedModel/places.pth'#The path of our pretrained network
         print(dgts_path)
         self.netG.load_state_dict(torch.load(dgts_path))
         self.netG.eval()
-        self.train_loader = DataLoader(self.trainset, batch_size=1, shuffle=True, num_workers=self.args.num_work, drop_last=False) 
+        self.train_loader = DataLoader(self.trainset, batch_size=1, shuffle=False, num_workers=self.args.num_work, drop_last=False) 
         
+        maskList = gafn(self.args.mask_dir) # gafn：輸入 > 遮罩(mask)資料夾路徑。 輸出 > 資料夾中所有檔案的路徑(path物件清單)
         for i,data_in in enumerate(self.train_loader):
             real = data_in.to(self.args.device)
             B,C,H,W = real.size()
-            tmp = random.sample(range(0,12000),1)
-            THE_PATH = osp.join('/DGTS/data/mask','%05d.png'%tmp[0])
+
+            #隨機mask
+            # tmp = random.sample(range(0,12000),1)
+            # THE_PATH = osp.join('data/mask','%05d.png'%tmp[0])
+
+            THE_PATH = osp.join(maskList[i])
+            THE_FILENAME = maskList[i].stem # 沒有後綴的檔名
+            print(maskList[i].name)
 
             mask_in = self.transform(Image.open(THE_PATH).convert('1')).to(self.args.device)
             mask = mask_in.resize(1,1,H,W)
@@ -128,23 +140,48 @@ class Trainer(object):
             vis = fake3.detach().cpu()
             vis = make_grid(vis, nrow =1, padding = 0, normalize = True)
             vis = T.ToPILImage()(vis)
-            vis.save(os.path.join(self.save_path,'{}_f.jpg'.format(i)))
+            vis.save(os.path.join(self.save_path,f'{THE_FILENAME}_f.jpg'))
 
             vis = (real).detach().cpu()
             vis = make_grid(vis, nrow =1, padding = 0, normalize = True)
             vis = T.ToPILImage()(vis)
-            vis.save(os.path.join(self.save_path,'{}_r.jpg'.format(i)))
+            real_file_path = os.path.join(self.save_path,f'{THE_FILENAME}_r.jpg')
+            vis.save(real_file_path)
 
-            img = torch.from_numpy(np.array(Image.open(os.path.join(self.save_path,'{}_r.jpg'.format(i))).resize([256,256], Image.BICUBIC)))
+            img = torch.from_numpy(np.array(Image.open(os.path.join(self.save_path,f'{THE_FILENAME}_r.jpg')).resize([256,256], Image.BICUBIC)))
             img_r = img.permute(2,0,1)/127.5 - 1.
             
-            img_f = torch.from_numpy(np.array(Image.open(os.path.join(self.save_path,'{}_f.jpg'.format(i))).resize([32,32], Image.BICUBIC)))
+            img_f = torch.from_numpy(np.array(Image.open(os.path.join(self.save_path,f'{THE_FILENAME}_f.jpg')).resize([32,32], Image.BICUBIC)))
             masked_img = torch.cat([(img_r.unsqueeze(0).cuda()* mask+(1-mask)), (1-mask)], 1)
+            to_pil = ToPILImage()
+            pil_img = to_pil(masked_img.cpu().squeeze())
+            mask_file_path = os.path.join(self.save_path,f'{THE_FILENAME}_m.png')
+            pil_img.save(mask_file_path)
+
+            # 將兩個圖像打開
+            vis_img = Image.open(os.path.join(self.save_path,f'{THE_FILENAME}_r.jpg'))
+            pil_img = Image.open(os.path.join(self.save_path,f'{THE_FILENAME}_m.png'))
+
+            # 將 PNG 圖像貼到 JPG 圖像上，使用 paste 方法
+            vis_img.paste(pil_img, (0, 0), mask=pil_img.split()[3])
+
+            # 保存疊加後的圖像
+            vis_img.save(os.path.join(self.save_path,f'{THE_FILENAME}_c.png'))
+
+            # 刪除原始圖
+            # os.remove(real_file_path)
+            # 刪除遮罩圖
+            os.remove(mask_file_path)
+
             sample_tensor =  torch.from_numpy(img_f.squeeze(0).data.cpu().numpy()).permute(2,0,1).unsqueeze(0).float()
             sample_tensor = sample_tensor/127.5 - 1
             
             _, sample_up = self.up([masked_img.cuda(), sample_tensor.cuda()])
             sample_up = sample_up * (1-mask) + masked_img[:,:3] * mask
             sample_up = sample_up[0].permute(1,2,0).detach().cpu().numpy()
-            sample_up = ((sample_up+1)*127.5).astype(np.uint8)     
-            Image.fromarray(sample_up).save(os.path.join(self.save_path, '{}_f.jpg'.format(i)))
+            sample_up = ((sample_up+1)*127.5).astype(np.uint8)
+            Image.fromarray(sample_up).save(os.path.join(self.save_path, f'{THE_FILENAME}_f.jpg'))
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print("執行時間為:", execution_time, "秒")

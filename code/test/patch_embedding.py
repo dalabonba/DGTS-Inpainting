@@ -32,7 +32,9 @@ class Embeddings(nn.Module):
         
         if i == -1:
             pos1 = positionalencoding2d(384,8,8)
-            pos = torch.tensor(pos1).clone().detach().cuda()
+            # pos = torch.tensor(pos1).clone().detach().cuda()
+            pos = pos1.clone().detach().cuda()
+
             x = self.patch_embeddings(x * mask) + pos
             x = x.flatten(2)
             x = x.transpose(-1, -2)
