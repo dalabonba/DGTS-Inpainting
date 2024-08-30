@@ -66,7 +66,7 @@ class Generator(nn.Module):
         embedding, in_mask, in_mask2 = self.embeddings(src1,mask1)
         xx = torch.zeros_like(src1).cuda()
         xm = torch.zeros_like(src1).cuda()
-        print(src.shape)
+        print("src.shape：",src.shape)
         if isinstance(src, (list, torch.Tensor)):
             src = nested_tensor_from_tensor_list(src * mask)
         features, pos = self.backbone(src)

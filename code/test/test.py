@@ -101,13 +101,13 @@ class Trainer(object):
         start_time = time.time()
         # Set the meta-train log
         upsample_path ="Places2/latest_net_G.pth"# The path of Upsampler pretrained network
-        print(upsample_path)
+        print("upsample_path：",upsample_path)
         self.up.load_state_dict(torch.load(upsample_path))
         self.up = self.up.cuda()
         self.up.eval()
         
         dgts_path = 'logs/pretrainedModel/places.pth'#The path of our pretrained network
-        print(dgts_path)
+        print("dgts_path：",dgts_path)
         self.netG.load_state_dict(torch.load(dgts_path))
         self.netG.eval()
         self.train_loader = DataLoader(self.trainset, batch_size=1, shuffle=False, num_workers=self.args.num_work, drop_last=False) 
