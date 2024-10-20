@@ -1,3 +1,10 @@
+'''
+這個檔案定義了一個名為 `Generator` 的神經網絡模型，
+使用變壓器架構來處理圖像生成任務，
+並包含編碼器和解碼器的實現，
+負責特徵提取和圖像重建。
+'''
+
 import os
 import os.path as osp
 import copy

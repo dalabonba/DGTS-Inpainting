@@ -1,4 +1,9 @@
    
+'''
+這個檔案定義了兩個損失函數類 `StyleLoss` 和 `PerceptualLoss`，
+它們基於 VGG19 模型計算風格損失和感知損失，用於圖像生成任務中的訓練過程。
+'''
+
 import torch
 import torch.nn as nn
 import torchvision.models as models
