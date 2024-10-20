@@ -3,6 +3,7 @@ import argparse #用於處理命令行參數的模組
 import numpy as np
 import torch
 from train import Trainer
+import os
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser() #argparse 模組會建立一個ArgumentParser 物件，用於管理命令行參數。
@@ -22,6 +23,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print("屬性args:",args)
+
+    # 設置可見的 CUDA 設備
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_devices
 
     # Set manual(手動) seed for PyTorch
     if args.seed==0:
