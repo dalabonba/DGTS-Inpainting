@@ -93,7 +93,7 @@ class Generator(nn.Module):
             e2 = att @ eu
             e2 = e2.view(embedding.shape[0],e2.shape[1],embedding.shape[-1])
             
-            tmp = np.linspace(0,B-1,B,dtype=np.int)
+            tmp = np.linspace(0,B-1,B,dtype=int)
             
             for i in range(e2.shape[1]):
                 embedding[tmp,torch.where(in_mask2[:]==64-(u+1))[1][i], :] = e2[tmp,i,:]
@@ -117,14 +117,14 @@ class Generator(nn.Module):
             u_out, u_score = self.decoder(embedding[torch.where(in_mask[:]==0)[0],torch.where(in_mask[:]==0)[1]].reshape(embedding.shape[0],-1,embedding.shape[-1]),memory,lamed,score_c,out_c)
             t = torch.argmax(torch.sum((u_score[self.num_decoder_layers-1]),dim=3).squeeze(1),dim = 1)
             ods = order[torch.where(in_mask[:]==0)[0],torch.where(in_mask[:]==0)[1]].squeeze(0).reshape(order.shape[0],-1)
-            tmp = np.linspace(0,B-1,B,dtype=np.int)##batch_size
+            tmp = np.linspace(0,B-1,B,dtype=int)##batch_size
             index = (t.data + ods[tmp,t].data).cpu().numpy()
             out_rgb = (u_out[self.num_decoder_layers])
             
             x = self.deconv((self.value1(out_rgb[tmp,t,:]).view(-1, 24,8, 8)))
             
-            h = (((index)  // 8) * 8).astype(np.int)
-            w = (((index) % 8) * 8).astype(np.int)
+            h = (((index)  // 8) * 8).astype(int)
+            w = (((index) % 8) * 8).astype(int)
             
             xxs = torch.zeros_like(xx[:,:,0:8,0:8]).cuda()
             for i in range(xx.shape[0]):
@@ -144,13 +144,13 @@ class Generator(nn.Module):
             u_sort = torch.argsort(torch.sum((u_score[self.num_decoder_layers-1]),dim=3).squeeze(1),dim = 1).T
         for u in range(N_patch,65):
             t = u_sort[u - N_patch,:]
-            tmp = np.linspace(0,B-1,B,dtype=np.int)##batch_size
+            tmp = np.linspace(0,B-1,B,dtype=int)##batch_size
             index = (torch.where(in_mask[:]==0)[1].reshape(xx.shape[0],-1)[tmp,t]).cpu().numpy()
             out_rgb = (u_out[self.num_decoder_layers])
             
             x = self.deconv((self.value1(out_rgb[tmp,t,:]).view(-1, 24,8, 8)))
-            h = (((index) // 8) * 8).astype(np.int)
-            w = (((index) % 8) * 8).astype(np.int)
+            h = (((index) // 8) * 8).astype(int)
+            w = (((index) % 8) * 8).astype(int)
             for i in range(xx.shape[0]):
                 xx[i,:,h[i]:h[i]+8,w[i]:w[i]+8] = x[i,:,:,:] * (1-mask1[i,:,h[i]:h[i]+8,w[i]:w[i]+8])+src1[i,:,h[i]:h[i]+8,w[i]:w[i]+8]* mask1[i,:,h[i]:h[i]+8,w[i]:w[i]+8]
                 xm[i,:,h[i]:h[i]+8,w[i]:w[i]+8] = 1
