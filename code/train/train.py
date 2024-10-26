@@ -89,8 +89,16 @@ class Trainer(object):
         # 14. 構建資料加載器，從訓練資料集中提取資料
         self.train_loader = DataLoader(self.trainset, batch_size=self.args.batch_size, shuffle=False, num_workers=4, drop_last=True) 
         for epoch in range(self.args.start_epoch, self.args.max_epoch + 1):
-            for data_in in self.train_loader:
-                
+            print(f"Epoch {epoch} Now...")
+            for data_in in self.train_loader: # 此處會調用__getitem__
+
+                for i in range(len(data_in)):
+                    for j in range(len(data_in[i])):
+                        image_tensor = data_in[i][j]  # 取出影像
+                        image_tensor = (image_tensor + 1) / 2  # 將張量的值範圍從 [-1, 1] 轉換到 [0, 1]
+                        image_pil = transforms.ToPILImage()(image_tensor)  # 轉換為 PIL 影像
+                        image_pil.save(f"data_in{i}_{j}.png")  # 保存影像
+
                 real = data_in.to(self.args.device)  # 將真實資料移到設備上 (如 GPU)
                 B, C, H, W = real.size()  # 提取資料的尺寸
 
