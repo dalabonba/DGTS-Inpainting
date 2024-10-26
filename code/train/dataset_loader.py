@@ -53,8 +53,8 @@ class DatasetLoader(Dataset): #繼承pytorch的Dataset
         '''
         if setname=='train':
             self.transform = transforms.Compose([
-                transforms.RandomResizedCrop(self.image_size),
-                transforms.RandomHorizontalFlip(),
+                transforms.RandomResizedCrop(self.image_size), # 牙齒不裁切
+                transforms.RandomHorizontalFlip(), # todo:想辦法讓原始圖跟遮罩套用相同翻轉，GPT會知道
         	    transforms.ToTensor(),
                 transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
             ])
@@ -64,8 +64,9 @@ class DatasetLoader(Dataset): #繼承pytorch的Dataset
         return len(self.data)
 
     '''
-    使用 PyTorch 的 DataLoader 來加載數據集時，
-    __getitem__ 方法會被調用。
+    首先使用 PyTorch 的 DataLoader 來加載數據集，
+    有了 DataLoader 實例，當從實例中請求一個樣本時，
+    __getitem__ 才會被自動調用。
     DataLoader 會根據指定的批次大小和其他參數，
     依次請求數據集中的樣本。
     '''
