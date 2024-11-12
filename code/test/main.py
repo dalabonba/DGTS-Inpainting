@@ -18,7 +18,8 @@ if __name__ == '__main__': # 程式的入口點，確保只有在此作為主程
     parser.add_argument('--dataset_dir', type=str, default='data/teeth_seem_inlay') # ！！！資料集目錄！！！
     parser.add_argument('--phase', type=str, default='test', choices=['train', 'test'])
     parser.add_argument('--mask_dir', type=str, default='data/mask_teeth_seem_inlay')  # ！！！遮罩(mask)資料集目錄！！！
-    parser.add_argument('--file_name', type=str, default='teeth_seem_inlay')  # ！！！設置測試文件夾名稱以保存圖像！！！
+    parser.add_argument('--file_name', type=str, default='my_model_test')  # ！！！設置測試文件夾名稱以保存圖像！！！
+    parser.add_argument('--dgts_path', type=str, default='logs/trainedChpt/trainNO01/Generator_428_0.5445051230490208.pth')  # ！！！設置使用的模型！！！
 
     args = parser.parse_args() # 解析命令列參數並存儲在 args 中
     print("args:",args)

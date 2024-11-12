@@ -22,7 +22,6 @@ import torch.nn.functional as F
 import time
 from glob import glob
 from PIL import Image
-from tqdm import tqdm
 import argparse
 import random
 from torchvision import transforms
@@ -106,7 +105,7 @@ class Trainer(object):
         self.up = self.up.cuda()
         self.up.eval()
         
-        dgts_path = 'logs/pretrainedModel/places.pth'#The path of our pretrained network
+        dgts_path = self.args.dgts_path #The path of our pretrained network
         print("dgts_path：",dgts_path)
         self.netG.load_state_dict(torch.load(dgts_path))
         self.netG.eval()
