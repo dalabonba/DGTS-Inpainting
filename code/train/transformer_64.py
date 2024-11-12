@@ -83,6 +83,13 @@ class Generator(nn.Module):
         ## Coarse Filled Attention
         embedding1 = embedding
         for u in range(0,64):
+            # print("in_mask2 values:\n", in_mask2)
+            # print("Condition result:\n", in_mask2 == 64 - (u + 1))
+            # print("Number of true values:", torch.sum(in_mask2 == 64 - (u + 1)))
+
+            # indices = torch.where(in_mask2[:] == 64 - (u + 1))
+            # print("Indices shape:", indices[0].shape, indices[1].shape)
+
             e2 = self.aq(embedding[torch.where(in_mask2[:]==64-(u+1))[0],torch.where(in_mask2[:]==64-(u+1))[1]].reshape(embedding.shape[0],-1,embedding.shape[-1])).view(embedding.shape[0],-1,embedding.shape[-1])
             eu = embedding[torch.where(in_mask2[:]>=64-(u))[0],torch.where(in_mask2[:]>=64-(u))[1]].reshape(embedding.shape[0],-1,embedding.shape[-1])
             e1 = self.ak(eu).view(embedding.shape[0],-1,embedding.shape[-1])

@@ -24,6 +24,11 @@ from dataset_loader import DatasetLoader as Dataset   # 1. 引入資料集的自
 from transformer_64 import Generator  # 2. 引入模型 Generator 類，負責生成影像
 from loss import PerceptualLoss, StyleLoss  # 3. 引入感知損失與風格損失，這是訓練過程中的重要損失函數
 # from itertools import cycle
+
+import time
+from pathlib import Path
+import statistics
+
 import random
 
 class Trainer(object):
@@ -50,7 +55,7 @@ class Trainer(object):
         # 6. 初始化生成器模型並移到設備上 (如 GPU)
         self.netG = Generator().to(self.args.device)
 
-        # 7. 設定規則遮罩，用於遮蓋部分影像
+        # 7. 設定規則遮罩(rgular mask)
         self.mask = torch.ones(self.args.batch_size, 1, self.args.image_size, self.args.image_size, device = self.args.device)
         self.mask[:, :, int((self.args.image_size - self.args.crop_size)//2): int((self.args.image_size + self.args.crop_size)//2), 
         int((self.args.image_size - self.args.crop_size)//2): int((self.args.image_size + self.args.crop_size)//2)] = 0.0
@@ -77,7 +82,7 @@ class Trainer(object):
         # 11. 設置影像處理過程，對遮罩進行預處理
         self.transform = transforms.Compose([
             transforms.Resize(size=(256, 256), interpolation=Image.NEAREST),
-            transforms.RandomHorizontalFlip(),
+            # transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
         ]) 
 
@@ -89,28 +94,64 @@ class Trainer(object):
         # 14. 構建資料加載器，從訓練資料集中提取資料
         self.train_loader = DataLoader(self.trainset, batch_size=self.args.batch_size, shuffle=False, num_workers=4, drop_last=True) 
         for epoch in range(self.args.start_epoch, self.args.max_epoch + 1):
+            start_time = time.time()
             print(f"Epoch {epoch} Now...")
-            for data_in in self.train_loader: # 此處會調用__getitem__
+            loss_list = []
+            for data_in, data_in_path in self.train_loader: # 此處會調用__getitem__ (一次回傳一個batch的資料)
 
-                for i in range(len(data_in)):
-                    for j in range(len(data_in[i])):
-                        image_tensor = data_in[i][j]  # 取出影像
-                        image_tensor = (image_tensor + 1) / 2  # 將張量的值範圍從 [-1, 1] 轉換到 [0, 1]
-                        image_pil = transforms.ToPILImage()(image_tensor)  # 轉換為 PIL 影像
-                        image_pil.save(f"data_in{i}_{j}.png")  # 保存影像
+                # 查看當前輸入資料
+                # for i in range(len(data_in)):
+                #     for j in range(len(data_in[i])):
+                #         image_tensor = data_in[i][j]  # 取出影像
+                #         image_tensor = (image_tensor + 1) / 2  # 將張量的值範圍從 [-1, 1] 轉換到 [0, 1]
+                #         image_pil = transforms.ToPILImage()(image_tensor)  # 轉換為 PIL 影像
+                #         image_pil.save(f"debug/data_in/data_in{i}_{j}.png")  # 保存影像
 
                 real = data_in.to(self.args.device)  # 將真實資料移到設備上 (如 GPU)
                 B, C, H, W = real.size()  # 提取資料的尺寸
 
                 # 15. 隨機選取遮罩
-                tmp = random.sample(range(0, 12000), 1)
-                THE_PATH = osp.join('data/mask','%05d.png' % tmp[0])
-                mask_in = self.transform(Image.open(THE_PATH).convert('1')).to(self.args.device)
-                mask = mask_in.resize(1, 1, H, W)
-                mask = torch.repeat_interleave(1 - mask, repeats=B, dim=0)
+                # tmp = random.sample(range(0, 12000), 1)
+                # THE_PATH = osp.join('data/mask','%05d.png' % tmp[0])
+                # mask_in = self.transform(Image.open(THE_PATH).convert('1')).to(self.args.device)
+                # mask = mask_in.resize(1, 1, H, W)
+                # mask = torch.repeat_interleave(1 - mask, repeats=B, dim=0)
+                # print("！！隨機mask！！mask.shape:",mask.shape)
 
-                #rgular mask
-                #mask = self.mask
+                # rgular mask
+                # mask = self.mask
+                # print(mask.shape)
+
+                # my mask
+                try:
+                    THE_PATH = data_in_path
+                    mask_list = []  # 用於存儲每張處理後的遮罩影像
+
+                    for path in THE_PATH:
+                        # 取得原始檔案名稱
+                        original_name = Path(path).name
+
+                        # 創建新的遮罩路徑
+                        mask_path = str(Path(f'{self.args.mask_dir}/masked_' + original_name))
+
+                        # 打開遮罩影像，並將其轉換為單通道（黑白）圖像，再來應用 transform 轉換，並移動到指定裝置
+                        mask_in = self.transform(Image.open(mask_path).convert('1')).to(self.args.device)
+                        
+                        # 將遮罩 resize 成指定大小 (1, 1, H, W)
+                        mask = mask_in.resize(1, 1, H, W)
+
+                        # 反轉遮罩的黑白 (1 - mask)
+                        mask = (1 - mask)
+                        
+                        # 將處理後的遮罩添加到列表
+                        mask_list.append(mask)
+
+                    # 使用 torch.cat 沿著第 0 維進行合併
+                    mask = torch.cat(mask_list, dim=0)
+                except Exception as e:
+                    print(f"處理遮罩時發生錯誤: {str(e)}")
+                    raise
+                # print("！！my mask！！mask.shape:",mask.shape)
 
                 # 16. 建立縮小的真實影像與遮罩
                 real1 = F.interpolate(real, scale_factor=0.25)
@@ -127,11 +168,17 @@ class Trainer(object):
                 loss2 = self.perceptual_loss(fake3, real1)  # 感知損失
                 loss3 = self.style_loss(fake3 * (1. - mask1), real1 * (1. - mask1))  # 風格損失
                 lossa = loss1 * 10 + loss2 * 0.1 + loss3 * 250  # 將各種損失加權求和
+                loss_list.append(lossa.item())
 
                 # 20. 反向傳播與優化步驟
                 self.optimizer_g.zero_grad()
                 lossa.backward()
                 self.optimizer_g.step()
-
+            
+            avg_loss = statistics.mean(loss_list)
+            print("LOSS值",avg_loss)
             # 21. 儲存模型檔案
-            torch.save(self.netG.state_dict(), os.path.join(self.save_path, 'Generator_{}.pth'.format(int(epoch))))
+            torch.save(self.netG.state_dict(), os.path.join(self.save_path, 'Generator_{}_{}.pth'.format(int(epoch), avg_loss)))
+            end_time = time.time()
+            execution_time = end_time - start_time
+            print("執行時間為:", execution_time, "秒")

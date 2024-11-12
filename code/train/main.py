@@ -13,11 +13,12 @@ if __name__ == '__main__':
     parser.add_argument('--image_size', type=int, default=256) # 圖像大小
     parser.add_argument('--crop_size', type=int, default=128) # 裁剪大小
     parser.add_argument('--seed', type=int, default=0) # 隨機種子
-    parser.add_argument('--dataset_dir', type=str, default='data/places2') # 輸入的資料集(執行run_train.py時會賦值給此參數)
-    parser.add_argument('--max_epoch', type=int, default=50) # 最大epoch數
-    parser.add_argument('--batch_size', type=int, default=32) # 批次大小
-    parser.add_argument('--start_epoch', type=int, default=0) # 開始epoch數
-    parser.add_argument('--file_name', type=str, default='trainNO01') # 設定儲存的資料夾名稱
+    parser.add_argument('--dataset_dir', type=str, default='data/teeth_depthmaps') # ！！！輸入的資料集(執行run_train.py時會賦值給此參數)！！！
+    parser.add_argument('--max_epoch', type=int, default=1000) # 最大epoch數
+    parser.add_argument('--batch_size', type=int, default=1) # 批次大小
+    parser.add_argument('--start_epoch', type=int, default=1) # 開始epoch數
+    parser.add_argument('--file_name', type=str, default='trainNO02') # ！！！設定儲存的資料夾名稱！！！
+    parser.add_argument('--mask_dir', type=str, default='data/mask_teeth_depthmaps')  # ！！！遮罩(mask)資料集目錄！！！
     parser.add_argument('--phase', type=str, default='train', choices=['train', 'test']) # Phase 此屬性對程式不影響(沒用到)
     parser.add_argument('--gpu_devices', type=str, default='0,1,2,3', help='指定要使用的 GPU 設備')
 

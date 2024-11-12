@@ -53,8 +53,8 @@ class DatasetLoader(Dataset): #繼承pytorch的Dataset
         '''
         if setname=='train':
             self.transform = transforms.Compose([
-                transforms.RandomResizedCrop(self.image_size), # 牙齒不裁切
-                transforms.RandomHorizontalFlip(), # todo:想辦法讓原始圖跟遮罩套用相同翻轉，GPT會知道
+                # transforms.RandomResizedCrop(self.image_size), # 牙齒不裁切
+                # transforms.RandomHorizontalFlip(), # todo:想辦法讓原始圖跟遮罩套用相同翻轉
         	    transforms.ToTensor(),
                 transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
             ])
@@ -74,4 +74,4 @@ class DatasetLoader(Dataset): #繼承pytorch的Dataset
     def __getitem__(self, i):
         path = self.data[i]
         image = self.transform(Image.open(path).convert('RGB'))
-        return image
+        return image, path
