@@ -10,8 +10,7 @@ def run_exp():
     # 生成主要命令字串
     the_command = (
         'python code/test/main.py' # 執行 Python 主程式的路徑和名稱
-        + ' --dataset_dir=' + 'data/teeth_seem_inlay' # 設置資料集目錄的路徑
-        # + ' --dataset_dir=' + 'data/places2' # 設置資料集目錄的路徑
+        # + ' --dataset_dir=' + 'data/teeth_seem_inlay' # ！！！資料集目錄！！！
         
     )
 
