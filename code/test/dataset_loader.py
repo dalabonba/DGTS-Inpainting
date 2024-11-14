@@ -41,4 +41,4 @@ class DatasetLoader(Dataset):
     def __getitem__(self, i):
         path = self.data[i]
         image = self.transform(Image.open(path).convert('RGB'))
-        return image
+        return image, path
