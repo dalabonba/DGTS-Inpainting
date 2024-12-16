@@ -12,11 +12,16 @@ if __name__ == '__main__':
     print(f"可用 GPU: {available_gpus}")
 
     parser = argparse.ArgumentParser() #argparse 模組會建立一個ArgumentParser 物件，用於管理命令行參數。
-    # basic parameters 
     parser.add_argument('--num_work', type=int, default=12)
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
-    parser.add_argument('--image_size', type=int, default=256) # 圖像大小
-    parser.add_argument('--crop_size', type=int, default=128) # 裁剪大小
+
+    # 圖像大小原始輸入圖像的完整大小（像素），如果設定為 256，表示所有輸入圖像都會被調整到 256x256 像素
+    parser.add_argument('--image_size', type=int, default=256)
+
+    # 實際用於神經網絡處理的圖像區域大小（像素），從原始 image_size 中心區域裁剪出來的子區域，
+    # 如果 image_size 是 256，crop_size 可能是 224，意味著只使用圖像中心的 224x224 像素。
+    parser.add_argument('--crop_size', type=int, default=128)
+
     parser.add_argument('--seed', type=int, default=0) # 隨機種子
     parser.add_argument('--dataset_dir', type=str, default='data/teeth_depthmaps') # ！！！輸入的資料集(執行run_train.py時會賦值給此參數)！！！
     parser.add_argument('--max_epoch', type=int, default=1000) # 最大epoch數
