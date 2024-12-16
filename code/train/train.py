@@ -202,7 +202,7 @@ class Trainer(object):
             print("感知損失(loss2)平均",avg_loss2)
             print("風格損失(loss3)平均",avg_loss3)
             print("加權損失(lossa)平均",avg_lossa)
-            
+
             # 記錄損失值
             tracker.plot('avg_loss1', avg_loss1)
             tracker.plot('avg_loss2', avg_loss2)
@@ -211,6 +211,11 @@ class Trainer(object):
             # 每10個迭代保存一次數據
             if epoch % 10 == 0:
                 tracker.flush()
+
+            end_time = time.time()
+            execution_time = end_time - start_time
+            print("執行時間為:", execution_time, "秒")
+            print("--------------------")
 
             # 準備要儲存的指標
             metrics = {
@@ -227,8 +232,3 @@ class Trainer(object):
                 metrics=metrics, 
                 epoch=epoch
             )
-
-            end_time = time.time()
-            execution_time = end_time - start_time
-            print("執行時間為:", execution_time, "秒")
-            print("--------------------")
