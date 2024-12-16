@@ -96,7 +96,10 @@ class Trainer(object):
         for epoch in range(self.args.start_epoch, self.args.max_epoch + 1):
             start_time = time.time()
             print(f"Epoch {epoch} Now...")
-            loss_list = []
+            loss1_list = []
+            loss2_list = []
+            loss3_list = []
+            lossa_list = []
             for data_in, data_in_path in self.train_loader: # 此處會調用__getitem__ (一次回傳一個batch的資料)
 
                 # 查看當前輸入資料
@@ -168,17 +171,27 @@ class Trainer(object):
                 loss2 = self.perceptual_loss(fake3, real1)  # 感知損失
                 loss3 = self.style_loss(fake3 * (1. - mask1), real1 * (1. - mask1))  # 風格損失
                 lossa = loss1 * 10 + loss2 * 0.1 + loss3 * 250  # 將各種損失加權求和
-                loss_list.append(lossa.item())
+                loss1_list.append(loss1.item())
+                loss2_list.append(loss2.item())
+                loss3_list.append(loss3.item())
+                lossa_list.append(lossa.item())
 
                 # 反向傳播與優化步驟
                 self.optimizer_g.zero_grad()
                 lossa.backward()
                 self.optimizer_g.step()
             
-            avg_loss = statistics.mean(loss_list)
-            print("LOSS值",avg_loss)
-            # 21. 儲存模型檔案
-            torch.save(self.netG.state_dict(), os.path.join(self.save_path, 'Generator_{}_{}.pth'.format(int(epoch), avg_loss)))
+            avg_loss1 = statistics.mean(loss1_list)
+            avg_loss2 = statistics.mean(loss2_list)
+            avg_loss3 = statistics.mean(loss3_list)
+            avg_lossa = statistics.mean(lossa_list)
+            print("L1損失損失(loss1)平均",avg_loss1)
+            print("感知損失(loss2)平均",avg_loss2)
+            print("風格損失(loss3)平均",avg_loss3)
+            print("加權損失(lossa)平均",avg_lossa)
+            # 儲存模型檔案
+            torch.save(self.netG.state_dict(), os.path.join(self.save_path, 'Generator_{}.pth'.format(int(epoch))))
             end_time = time.time()
             execution_time = end_time - start_time
             print("執行時間為:", execution_time, "秒")
+            print("--------------------")
