@@ -98,9 +98,9 @@ class Trainer(object):
         # 創建模型檢查點管理器
         model_checkpoint = ModelCheckpoint(
             save_path=self.save_path, 
-            monitor=['avg_lossa', 'avg_loss1', 'avg_loss2', 'avg_loss3'],
+            monitor=['avg_lossa'],
             mode='min',
-            keep_top_k=3
+            keep_top_k=5
         )
 
         # 構建資料加載器，從訓練資料集中提取資料
@@ -221,9 +221,6 @@ class Trainer(object):
             metrics = {
                 'epoch': epoch,
                 'avg_lossa': avg_lossa,
-                'avg_loss1': avg_loss1,
-                'avg_loss2': avg_loss2,
-                'avg_loss3': avg_loss3,
                 'execution_time': execution_time
             }
             # 儲存模型
