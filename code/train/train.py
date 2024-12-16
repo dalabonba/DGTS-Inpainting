@@ -20,6 +20,7 @@ from torchvision import transforms
 from PIL import Image
 
 from plot import MetricsTracker
+from save import ModelCheckpoint
 from dataset_loader import DatasetLoader as Dataset   # 引入資料集的自訂義 DatasetLoader 類，負責加載訓練和測試資料
 from transformer_64 import Generator  # 引入模型 Generator 類，負責生成影像
 from loss import PerceptualLoss, StyleLoss  # 引入感知損失與風格損失，這是訓練過程中的重要損失函數
@@ -93,6 +94,14 @@ class Trainer(object):
 
         # 創建 MetricsTracker 實例用於紀錄訓練數據與畫圖
         tracker = MetricsTracker(self.save_path)
+
+        # 創建模型檢查點管理器
+        model_checkpoint = ModelCheckpoint(
+            save_path=self.save_path, 
+            monitor=['avg_lossa', 'avg_loss1', 'avg_loss2', 'avg_loss3'],
+            mode='min',
+            keep_top_k=3
+        )
 
         # 構建資料加載器，從訓練資料集中提取資料
         self.train_loader = DataLoader(self.trainset, batch_size=self.args.batch_size, shuffle=False, num_workers=4, drop_last=True) 
@@ -193,18 +202,32 @@ class Trainer(object):
             print("感知損失(loss2)平均",avg_loss2)
             print("風格損失(loss3)平均",avg_loss3)
             print("加權損失(lossa)平均",avg_lossa)
+            
             # 記錄損失值
             tracker.plot('avg_loss1', avg_loss1)
             tracker.plot('avg_loss2', avg_loss2)
             tracker.plot('avg_loss3', avg_loss3)
             tracker.plot('avg_lossa', avg_lossa)
-
             # 每10個迭代保存一次數據
             if epoch % 10 == 0:
                 tracker.flush()
-                
-            # 儲存模型檔案
-            torch.save(self.netG.state_dict(), os.path.join(self.save_path, 'Generator_{}.pth'.format(int(epoch))))
+
+            # 準備要儲存的指標
+            metrics = {
+                'epoch': epoch,
+                'avg_lossa': avg_lossa,
+                'avg_loss1': avg_loss1,
+                'avg_loss2': avg_loss2,
+                'avg_loss3': avg_loss3,
+                'execution_time': execution_time
+            }
+            # 儲存模型
+            model_checkpoint.step(
+                model=self.netG, 
+                metrics=metrics, 
+                epoch=epoch
+            )
+
             end_time = time.time()
             execution_time = end_time - start_time
             print("執行時間為:", execution_time, "秒")
