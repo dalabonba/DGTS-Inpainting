@@ -108,6 +108,7 @@ class Trainer(object):
         for epoch in range(self.args.start_epoch, self.args.max_epoch + 1):
             start_time = time.time()
             tracker.tick() # 遞增迭代計數器
+            print("--------------------")
             print(f"Epoch {epoch} Now...")
             loss1_list = []
             loss2_list = []
@@ -215,7 +216,6 @@ class Trainer(object):
             end_time = time.time()
             execution_time = end_time - start_time
             print("執行時間為:", execution_time, "秒")
-            print("--------------------")
 
             # 準備要儲存的指標
             metrics = {
