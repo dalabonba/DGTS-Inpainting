@@ -3,8 +3,14 @@ import argparse
 import numpy as np
 import torch
 from test import Trainer
+import os
 
 if __name__ == '__main__': # 程式的入口點，確保只有在此作為主程式運行時才執行以下程式碼，而不是被導入其他模組時執行
+    # 動態檢測並選擇 GPU
+    available_gpus = list(range(torch.cuda.device_count()))
+    os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, available_gpus))
+    print(f"可用 GPU: {available_gpus}")
+    
     parser = argparse.ArgumentParser() # 創建一個 argparse 解析器物件
     # basic parameters 基本參數
     parser.add_argument('--num_work', type=int, default=12) # 工作線程數

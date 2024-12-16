@@ -6,6 +6,11 @@ from train import Trainer
 import os
 
 if __name__ == '__main__':
+    # 動態檢測並選擇 GPU
+    available_gpus = list(range(torch.cuda.device_count()))
+    os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, available_gpus))
+    print(f"可用 GPU: {available_gpus}")
+
     parser = argparse.ArgumentParser() #argparse 模組會建立一個ArgumentParser 物件，用於管理命令行參數。
     # basic parameters 
     parser.add_argument('--num_work', type=int, default=12)
@@ -20,13 +25,9 @@ if __name__ == '__main__':
     parser.add_argument('--file_name', type=str, default='trainNO02') # ！！！設定儲存的資料夾名稱！！！
     parser.add_argument('--mask_dir', type=str, default='data/mask_teeth_depthmaps')  # ！！！遮罩(mask)資料集目錄！！！
     parser.add_argument('--phase', type=str, default='train', choices=['train', 'test']) # Phase 此屬性對程式不影響(沒用到)
-    parser.add_argument('--gpu_devices', type=str, default='0,1,2,3', help='指定要使用的 GPU 設備')
 
     args = parser.parse_args()
     print("屬性args:",args)
-
-    # 設置可見的 CUDA 設備
-    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_devices
 
     # Set manual(手動) seed for PyTorch
     if args.seed==0:
