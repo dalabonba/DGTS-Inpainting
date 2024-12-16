@@ -20,6 +20,7 @@ if __name__ == '__main__':
 
     # 實際用於神經網絡處理的圖像區域大小（像素），從原始 image_size 中心區域裁剪出來的子區域，
     # 如果 image_size 是 256，crop_size 可能是 224，意味著只使用圖像中心的 224x224 像素。
+    # 只有用在建立rgular mask
     parser.add_argument('--crop_size', type=int, default=128)
 
     parser.add_argument('--seed', type=int, default=0) # 隨機種子
