@@ -19,7 +19,7 @@ from torchvision.utils import make_grid
 from torchvision import transforms
 from PIL import Image
 
-#import plot
+from plot import MetricsTracker
 from dataset_loader import DatasetLoader as Dataset   # 引入資料集的自訂義 DatasetLoader 類，負責加載訓練和測試資料
 from transformer_64 import Generator  # 引入模型 Generator 類，負責生成影像
 from loss import PerceptualLoss, StyleLoss  # 引入感知損失與風格損失，這是訓練過程中的重要損失函數
@@ -84,17 +84,21 @@ class Trainer(object):
             transforms.Resize(size=(256, 256), interpolation=Image.NEAREST),
             # transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-        ]) 
+        ])
 
     # 訓練核心邏輯
     def train(self):
         # 設置模型為訓練模式
         self.netG.train()
 
+        # 創建 MetricsTracker 實例用於紀錄訓練數據與畫圖
+        tracker = MetricsTracker(self.save_path)
+
         # 構建資料加載器，從訓練資料集中提取資料
         self.train_loader = DataLoader(self.trainset, batch_size=self.args.batch_size, shuffle=False, num_workers=4, drop_last=True) 
         for epoch in range(self.args.start_epoch, self.args.max_epoch + 1):
             start_time = time.time()
+            tracker.tick() # 遞增迭代計數器
             print(f"Epoch {epoch} Now...")
             loss1_list = []
             loss2_list = []
@@ -189,6 +193,16 @@ class Trainer(object):
             print("感知損失(loss2)平均",avg_loss2)
             print("風格損失(loss3)平均",avg_loss3)
             print("加權損失(lossa)平均",avg_lossa)
+            # 記錄損失值
+            tracker.plot('avg_loss1', avg_loss1)
+            tracker.plot('avg_loss2', avg_loss2)
+            tracker.plot('avg_loss3', avg_loss3)
+            tracker.plot('avg_lossa', avg_lossa)
+
+            # 每10個迭代保存一次數據
+            if epoch % 10 == 0:
+                tracker.flush()
+                
             # 儲存模型檔案
             torch.save(self.netG.state_dict(), os.path.join(self.save_path, 'Generator_{}.pth'.format(int(epoch))))
             end_time = time.time()
