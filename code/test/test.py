@@ -108,7 +108,13 @@ class Trainer(object):
         
         dgts_path = self.args.dgts_path #The path of our pretrained network
         print("dgts_path：",dgts_path)
-        self.netG.load_state_dict(torch.load(dgts_path))
+        checkpoint = torch.load(dgts_path)
+        try:
+            # 先嘗試直接載入
+            self.netG.load_state_dict(checkpoint)
+        except RuntimeError:
+            self.netG.load_state_dict(checkpoint['model_state_dict'])
+            
         self.netG.eval()
         self.train_loader = DataLoader(self.trainset, batch_size=1, shuffle=False, num_workers=self.args.num_work, drop_last=False) 
         
@@ -165,9 +171,9 @@ class Trainer(object):
             # 將 PNG 圖像貼到 png 圖像上，使用 paste 方法
             vis_img.paste(pil_img, (0, 0), mask=pil_img.split()[3])
             # 保存疊加後的圖像
-            # vis_img.save(os.path.join(self.save_path,f'{THE_FILENAME}_c.png'))
+            vis_img.save(os.path.join(self.save_path,f'{THE_FILENAME}_c.png'))
             # 刪除原始圖
-            os.remove(real_file_path)
+            # os.remove(real_file_path)
             # 刪除遮罩圖
             os.remove(mask_file_path)
 
