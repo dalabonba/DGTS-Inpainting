@@ -28,8 +28,8 @@ if __name__ == '__main__':
     parser.add_argument('--max_epoch', type=int, default=1000) # 最大epoch數
     parser.add_argument('--batch_size', type=int, default=1) # 批次大小
     parser.add_argument('--start_epoch', type=int, default=1) # 開始epoch數
-    parser.add_argument('--file_name', type=str, default='trainNO02') # ！！！設定儲存的資料夾名稱！！！
-    parser.add_argument('--mask_dir', type=str, default='data/mask_teeth_depthmaps')  # ！！！遮罩(mask)資料集目錄！！！
+    parser.add_argument('--file_name', type=str, default='trainNO03') # ！！！設定儲存的資料夾名稱！！！
+    parser.add_argument('--mask_dir', type=str, default='data/mask03')  # ！！！遮罩(mask)資料集目錄！！！
     parser.add_argument('--phase', type=str, default='train', choices=['train', 'test']) # Phase 此屬性對程式不影響(沒用到)
 
     args = parser.parse_args()

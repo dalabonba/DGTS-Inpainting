@@ -9,7 +9,7 @@
 import os
 import os.path as osp
 import torch.nn.functional as F
-# import numpy as np
+import numpy as np
 import torch
 import torch.nn as nn
 # import torchvision.transforms as T
@@ -29,6 +29,7 @@ from loss import PerceptualLoss, StyleLoss  # 引入感知損失與風格損失�
 import time
 from pathlib import Path
 import statistics
+import cv2
 
 import random
 
@@ -57,9 +58,9 @@ class Trainer(object):
         self.netG = Generator().to(self.args.device)
 
         # 設定規則遮罩(rgular mask)
-        self.mask = torch.ones(self.args.batch_size, 1, self.args.image_size, self.args.image_size, device = self.args.device)
-        self.mask[:, :, int((self.args.image_size - self.args.crop_size)//2): int((self.args.image_size + self.args.crop_size)//2), 
-        int((self.args.image_size - self.args.crop_size)//2): int((self.args.image_size + self.args.crop_size)//2)] = 0.0
+        # self.mask = torch.ones(self.args.batch_size, 1, self.args.image_size, self.args.image_size, device = self.args.device)
+        # self.mask[:, :, int((self.args.image_size - self.args.crop_size)//2): int((self.args.image_size + self.args.crop_size)//2), 
+        # int((self.args.image_size - self.args.crop_size)//2): int((self.args.image_size + self.args.crop_size)//2)] = 0.0
 
         # 初始化損失函數
         self.perceptual_loss = PerceptualLoss().to(self.args.device)
@@ -82,7 +83,7 @@ class Trainer(object):
         ## transform for mask
         # 設置影像處理過程，用於對遮罩進行預處理
         self.transform = transforms.Compose([
-            transforms.Resize(size=(256, 256), interpolation=Image.NEAREST),
+            # transforms.Resize(size=(256, 256), interpolation=Image.NEAREST),
             # transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
         ])
@@ -128,46 +129,54 @@ class Trainer(object):
                 B, C, H, W = real.size()  # 提取資料的尺寸
 
                 # 隨機選取遮罩
-                # tmp = random.sample(range(0, 12000), 1)
-                # THE_PATH = osp.join('data/mask','%05d.png' % tmp[0])
-                # mask_in = self.transform(Image.open(THE_PATH).convert('1')).to(self.args.device)
-                # mask = mask_in.resize(1, 1, H, W)
-                # mask = torch.repeat_interleave(1 - mask, repeats=B, dim=0)
-                # print("！！隨機mask！！mask.shape:",mask.shape)
+                THE_PATH = Path(self.args.mask_dir) / 'train'
+                if not THE_PATH.exists():
+                    raise ValueError(f"訓練遮罩目錄 '{THE_PATH}' 不存在(可能忘記放進train資料夾?)")
+                mask_path = random.choice(list(THE_PATH.iterdir())) # 從遮罩目錄隨機挑一個遮罩
+                mask_in = self.transform(Image.open(mask_path).convert('1')).to(self.args.device)
+                mask = mask_in.resize(1, 1, H, W)
+                mask = torch.repeat_interleave(1 - mask, repeats=B, dim=0)
+                # 輸出遮罩查看結果
+                mask_for_look = mask.numpy()
+                mask_for_look = (mask_for_look * 255).astype(np.uint8) # 將標準化圖像轉換為 uint8 範圍：將 [0.0, 1.0] 的範圍映射到 [0, 255]，並轉換為整數類型
+                cv2.imshow('look mask', mask_for_look)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+                print("！！隨機mask！！mask.shape:",mask.shape)
 
                 # rgular mask
                 # mask = self.mask
                 # print(mask.shape)
 
-                # my mask
-                try:
-                    THE_PATH = data_in_path
-                    mask_list = []  # 用於存儲每張處理後的遮罩影像
+                # my mask(一深度圖對一遮罩)
+                # try:
+                #     THE_PATH = data_in_path
+                #     mask_list = []  # 用於存儲每張處理後的遮罩影像
 
-                    for path in THE_PATH:
-                        # 取得原始檔案名稱
-                        original_name = Path(path).name
+                #     for path in THE_PATH:
+                #         # 取得原始檔案名稱
+                #         original_name = Path(path).name
 
-                        # 創建新的遮罩路徑
-                        mask_path = str(Path(f'{self.args.mask_dir}/masked_' + original_name))
+                #         # 創建新的遮罩路徑
+                #         mask_path = str(Path(f'{self.args.mask_dir}/masked_' + original_name))
 
-                        # 打開遮罩影像，並將其轉換為單通道（黑白）圖像，再來應用 transform 轉換，並移動到指定裝置
-                        mask_in = self.transform(Image.open(mask_path).convert('1')).to(self.args.device)
+                #         # 打開遮罩影像，並將其轉換為單通道（黑白）圖像，再來應用 transform 轉換，並移動到指定裝置
+                #         mask_in = self.transform(Image.open(mask_path).convert('1')).to(self.args.device)
                         
-                        # 將遮罩 resize 成指定大小 (1, 1, H, W)
-                        mask = mask_in.resize(1, 1, H, W)
+                #         # 將遮罩 resize 成指定大小 (1, 1, H, W)
+                #         mask = mask_in.resize(1, 1, H, W)
 
-                        # 反轉遮罩的黑白 (1 - mask)
-                        mask = (1 - mask)
+                #         # 反轉遮罩的黑白 (1 - mask)
+                #         mask = (1 - mask)
                         
-                        # 將處理後的遮罩添加到列表
-                        mask_list.append(mask)
+                #         # 將處理後的遮罩添加到列表
+                #         mask_list.append(mask)
 
-                    # 使用 torch.cat 沿著第 0 維進行合併
-                    mask = torch.cat(mask_list, dim=0)
-                except Exception as e:
-                    print(f"處理遮罩時發生錯誤: {str(e)}")
-                    raise
+                #     # 使用 torch.cat 沿著第 0 維進行合併
+                #     mask = torch.cat(mask_list, dim=0)
+                # except Exception as e:
+                #     print(f"處理遮罩時發生錯誤: {str(e)}")
+                #     raise
                 # print("！！my mask！！mask.shape:",mask.shape)
 
                 # 建立縮小的真實影像與遮罩
