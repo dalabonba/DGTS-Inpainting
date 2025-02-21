@@ -105,9 +105,10 @@ class Trainer(object):
         )
 
         # 構建資料加載器，從訓練資料集中提取資料
-        self.train_loader = DataLoader(self.trainset, batch_size=self.args.batch_size, shuffle=False, num_workers=4, drop_last=True) 
+        self.train_loader = DataLoader(self.trainset, batch_size=self.args.batch_size, shuffle=False, num_workers=4, drop_last=True)
+        start_time_total = time.time()
         for epoch in range(self.args.start_epoch, self.args.max_epoch + 1):
-            start_time = time.time()
+            start_time_perEpoch = time.time()
             tracker.tick() # 遞增迭代計數器
             print("--------------------")
             print(f"Epoch {epoch} Now...")
@@ -222,15 +223,15 @@ class Trainer(object):
             if epoch % 10 == 0:
                 tracker.flush()
 
-            end_time = time.time()
-            execution_time = end_time - start_time
-            print("執行時間為:", execution_time, "秒")
+            end_time_perEpoch = time.time()
+            execution_time_perEpoch = end_time_perEpoch - start_time_perEpoch
+            print("執行時間為:", execution_time_perEpoch, "秒")
 
             # 準備要儲存的指標
             metrics = {
                 'epoch': epoch,
                 'avg_lossa': avg_lossa,
-                'execution_time': execution_time
+                'execution_time_perEpoch': execution_time_perEpoch
             }
             # 儲存模型
             model_checkpoint.step(
@@ -238,3 +239,7 @@ class Trainer(object):
                 metrics=metrics, 
                 epoch=epoch
             )
+
+        end_time_total = time.time()
+        execution_time_total = end_time_total - start_time_total
+        print("總訓練時間為:", execution_time_total, "秒")
